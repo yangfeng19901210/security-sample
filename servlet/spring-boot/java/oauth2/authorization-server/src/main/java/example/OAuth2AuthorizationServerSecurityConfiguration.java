@@ -20,6 +20,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
 import java.util.UUID;
 
 import com.nimbusds.jose.jwk.JWKSet;
@@ -41,15 +42,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -68,6 +74,29 @@ public class OAuth2AuthorizationServerSecurityConfiguration {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 		return http.formLogin(Customizer.withDefaults()).build();
 	}
+
+	@Bean
+	public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+		return (context) -> {
+			if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+				context.getClaims().claims((claims) -> {
+					claims.put("claim-1", "value-1");
+					claims.put("claim-2", "value-2");
+				});
+
+			}
+			System.out.println("自定义token");
+
+		};
+	}
+    @Bean
+	public OAuth2TokenGenerator<OAuth2AccessToken> ff(){
+		return (context) -> {
+			OAuth2AccessToken token = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,"dsfdsf", Instant.now(),Instant.now().plusSeconds(60 * 60));
+			return token;
+		};
+	}
+
 
 	@Bean
 	@Order(2)
